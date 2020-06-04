@@ -1,20 +1,20 @@
 <template>
-	<view class="login">
+	<view class='login'>
 		
 		<swiper vertical='true' style="height: 100vh;">
 			<swiper-item>
-				<scroll-view scroll-y="true" >
-					<view class="login-tel">
-						<view class="tel-main">
-							<view class="close" @tap='goBack'>
-								<image class="close-img" src="../../static/img/close.png" mode=""></image>
+				<scroll-view>
+					<view class='login-tel'>
+						<view class='tel-main'>
+							<view class='close' @tap='goBack'>
+								<image class='close-img' src="../../static/img/close.png" mode=""></image>
 							</view>
-							<view class="logo">
-								<image class="logo-img" src="../../static/img/logo.jpg" mode=""></image>
-							</view>			
-							<view class="tel">手机号注册</view>			
-							<loginOther></loginOther>				
-							<view class="login-go">
+							<view class='logo'>
+								<image class='logo-img' src="../../static/img/logo.jpg" mode=""></image>
+							</view>
+							<view class='tel' @tap='goLoginTel'>手机号注册</view>
+							<LoginOther></LoginOther>
+							<view class='login-go'>
 								<view>已有账号，去登录</view>
 								<image src="../../static/img/down.png" mode=""></image>
 							</view>
@@ -22,75 +22,74 @@
 					</view>
 				</scroll-view>
 			</swiper-item>
-			
 			<swiper-item>
-				<scroll-view scroll-y="true">
-					<view class="login-tel">
-						<view class="tel-main">
-							<view class="close close-center">
+				<scroll-view scroll-y="true" >
+					<view class='login-tel'>
+						<view class='tel-main'>
+							<view class='close close-center'>
 								<view @tap='goBack'>
 									<image class='close-img' src="../../static/img/close.png" mode=""></image>
 								</view>
-								<view class="login-go">
+								<view class='login-go'>
 									<image class='close-img' src="../../static/img/up.png" mode=""></image>
 									<view>没有账号，去注册</view>
 								</view>
 								<view></view>
 							</view>
-							<view class="login-from">
-								<view class="login-user">
-									<text class="user-text">账号</text>
-									<input type="text" v-model="userName" value="" placeholder="输入手机号/昵称"/>
+							<view class='login-from'>
+								<view class='login-user'>
+									<text class='user-text'>账号</text>
+									<input type="text" v-model="userName" value="" placeholder="请输入手机号/昵称"/>
 								</view>
-								<view class="login-user">
-									<text class="user-text">密码</text>
-									<input type="password" v-model="userPwd" value="" placeholder="6-16位字符"/>
+								<view class='login-user'>
+									<text class='user-text'>密码</text>
+									<input type="text" v-model="userPwd" value="" placeholder="6-16位字符"/>
 								</view>
 							</view>
-							<view class="login-quick">
-								<view>忘记密码？</view>
+							<view class='login-quick'>
+								<view>忘记密码?</view>
 								<view>免密登录</view>
 							</view>
-							<view class="tel" @tap='submit'>登录</view>	
-							<view class="reminder">温馨提示，您可以选择免密登录，更加方便</view>
-							<loginOther></loginOther>
+							<view class='tel' @tap='submit'>登录</view>
+							<view class='reminder'>温馨提示：您可以选择免密登录，更加方便</view>
+							<LoginOther></LoginOther>
 						</view>
 					</view>
 				</scroll-view>
 			</swiper-item>
 		</swiper>
 		
-		
-		
-		
 	</view>
 </template>
 
 <script>
-import loginOther from '@/components/login/login-other.vue'
+	import $http from '@/common/api/request.js'
+	import LoginOther from '@/components/login/login-other.vue'
+	import {mapMutations} from 'vuex'
 	export default {
 		data() {
 			return {
 				//用户输入的内容
-				userName:'',
-				userPwd:'',
-				//验证的规则
+				userName:"",
+				userPwd:"",
+				//验证的规格
 				rules:{
 					userName:{
 						rule:/\S/,
-						msg:"账号不能为空",
+						msg:"账号不能为空"
 					},
 					userPwd:{
-						rule:/^[0-9a-zA-Z]{6,16}$/,
+						rule:/^[0-9a-zA-z]{6,16}$/,
 						msg:"密码应该为6-16位字符"
 					}
 				}
 			}
 		},
 		components:{
-			loginOther
+			LoginOther
 		},
 		methods: {
+			...mapMutations(['login']),
 			//关闭当前页面，返回上一页
 			goBack(){
 				uni.navigateBack({
@@ -99,20 +98,61 @@ import loginOther from '@/components/login/login-other.vue'
 			},
 			//点击登录
 			submit(){
-				if( !this.validate(userName)) return
-				if( !this.validate(userPwd)) return
+				if(  !this.validate('userName')  ) return;
+				if(  !this.validate("userPwd") )   return;
+				
+				uni.showLoading({
+					title:"登录中..."
+				})
+				
+				$http.request({
+					url:"/login",
+					method:"POST",
+					data:{
+						userName:this.userName,
+						userPwd:this.userPwd
+					}
+				}).then((res)=>{
+					
+					//保存用户信息
+					this.login(res.data)
+					
+					uni.showToast({
+						title:res.msg,
+						icon:"none"
+					})
+					
+					uni.hideLoading();
+					uni.navigateBack({
+						delta:1
+					})
+					
+				}).catch(()=>{
+					uni.showToast({
+						title:'请求失败',
+						icon:'none'
+					})
+				})
+				
 			},
 			//判断验证是否符合要求
 			validate(key){
-				let bool = true
-				if(!this.rules[key].rule.test(this[key])){
+				let bool = true;
+				if(  !this.rules[key].rule.test(this[key]) ){
 					uni.showToast({
 						title:this.rules[key].msg,
-						icon:'none'
+						icon:"none"
 					})
-					bool = false
+					bool=false;
+					return false;
 				}
-				return bool
+				return bool;
+			},
+			//进入手机号注册页面
+			goLoginTel(){
+				uni.navigateTo({
+					url:"../login-tel/login-tel"
+				})
 			}
 		}
 	}
@@ -124,31 +164,26 @@ import loginOther from '@/components/login/login-other.vue'
 	height: 100vh;
 }
 .tel-main{
-	padding: 0 20rpx;
+	padding:0 20rpx;
 }
 .close{
-	padding: 120rpx 0;
+	padding:120rpx 0;
 }
 .close-img{
-	width: 60rpx;
+	width:60rpx;
 	height: 60rpx;
 }
 .logo{
 	padding-bottom: 100rpx;
 	display: flex;
 	justify-content: center;
-	align-items: center;
-}
-.logo-img{
-	width: 400rpx;
-	height: 300rpx;
 }
 .tel{
-	width: 100%;
+	width:100%;
 	height: 80rpx;
 	line-height: 80rpx;
 	text-align: center;
-	color: #FFFFFF;
+	color:#FFFFFF;
 	background-color: #49BDFB;
 	border-radius: 40rpx;
 }
@@ -159,26 +194,25 @@ import loginOther from '@/components/login/login-other.vue'
 	align-items: center;
 }
 .login-go image{
-	width: 60rpx;
+	width:60rpx;
 	height: 60rpx;
 }
-
-/*第二屏*/
+/*第二*/
 .close-center{
 	display: flex;
 }
 .close-center >view{
-	flex: 1;
+	flex:1;
 }
 .login-from{
-	padding-top: 100rpx;
+	padding-top:100rpx;
 }
 .login-user{
-	font-size: 32rpx;
-	padding: 10rpx 0;
+	font-size:32rpx;
+	padding:10rpx 0;
 	display: flex;
 	align-items: center;
-	border-bottom: 2rpx solid #808080;
+	border-bottom:2rpx solid #f7f7f7;
 }
 .user-text{
 	padding-right:10rpx;
@@ -189,8 +223,8 @@ import loginOther from '@/components/login/login-other.vue'
 	padding: 20rpx 0;
 }
 .reminder{
-	padding: 20rpx 0;
+	color:#CCCCCC;
+	padding:20rpx 0;
 	text-align: center;
-	color: #CCCCCC;
 }
 </style>

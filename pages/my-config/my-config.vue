@@ -24,11 +24,12 @@
 			<view>地址管理</view>
 			<view>></view>
 		</view>
-		<view class="my-exit">退出</view>
+		<view class="my-exit" @tap='outLogin'>退出登录</view>
 	</view>
 </template>
 
 <script>
+	import {mapMutations} from 'vuex'
 	export default {
 		data() {
 			return {
@@ -36,9 +37,21 @@
 			}
 		},
 		methods: {
+			...mapMutations(['loginOut']),
 			goPathList(){
 				uni.navigateTo({
 					url:'/pages/my-path-list/my-path-list'
+				})
+			},
+			outLogin(){
+				uni.showToast({
+					title:'退出成功',
+					icon:'none'
+				})
+				
+				this.loginOut()
+				uni.reLaunch({
+					url:'../index/index'
 				})
 			}
 		}

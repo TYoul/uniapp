@@ -30,12 +30,14 @@
 				</view>				
 			</scroll-view>
 		</view>
+		<Tabbar currentPage='list'></Tabbar>
 	</view>
 </template>
 
 <script>
 import $http from "@/common/api/request.js"
 import Lines from '@/components/common/Lines.vue'
+import Tabbar from '@/components/common/Tabbar.vue'
 	export default {
 		data() {
 			return {
@@ -60,7 +62,8 @@ import Lines from '@/components/common/Lines.vue'
 			})
 		},
 		components:{
-			Lines
+			Lines,
+			Tabbar
 		},
 		//input输入框点击事件
 		onNavigationBarSearchInputClicked(){
