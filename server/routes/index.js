@@ -2,6 +2,10 @@ var express = require('express');
 var router = express.Router();
 var connection = require('../db/sql.js');
 var user = require('../db/UserSql.js');
+//验证码
+let code = '';
+//接入短信的sdk
+var QcloudSms = require("qcloudsms_js");
 
 router.all('*', function (req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -18,7 +22,91 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+//注册===>增加一条数据
+router.post('/api/addUser', function(req, res, next) {
+	//前端给后端的数据
+	let params = {
+		userName : req.body.userName,
+		userCode : req.body.code
+	};
+	if(  params.userCode == code   ){
+		connection.query( user.insertData( params ) , function (error, results, fields) {
+		    res.send({
+				data:{
+					success:true,
+					msg:"注册成功"
+				}
+			})
+		})
+	}
+	
+})
 
+//发送验证码
+router.post('/api/code', function(req, res, next) {
+	//前端给后端的数据
+	let params = {
+		userName : req.body.userName
+	};
+	// 短信应用 SDK AppID
+	var appid = 1400187558;  // SDK AppID 以1400开头
+	// 短信应用 SDK AppKey
+	var appkey = "dc9dc3391896235ddc2325685047edc7";
+	// 需要发送短信的手机号码
+	var phoneNumbers = [params.userName];
+	// 短信模板 ID，需要在短信控制台中申请
+	var templateId = 298000;  // NOTE: 这里的模板ID`7839`只是示例，真实的模板 ID 需要在短信控制台中申请
+	// 签名
+	var smsSign = "三人行慕课";  // NOTE: 签名参数使用的是`签名内容`，而不是`签名ID`。这里的签名"腾讯云"只是示例，真实的签名需要在短信控制台申请
+	// 实例化 QcloudSms
+	var qcloudsms = QcloudSms(appid, appkey);
+	// 设置请求回调处理, 这里只是演示，用户需要自定义相应处理回调
+	function callback(err, ress, resData) {
+	  if (err) {
+	      console.log("err: ", err);
+	  } else {
+		  code = ress.req.body.params[0];
+	      res.send({
+			  data:{
+				  success:true,
+				  code:code
+			  }
+		  })
+	  }
+	}
+	var ssender = qcloudsms.SmsSingleSender();
+	var paramss = [  Math.floor( Math.random()*(9999-1000))+1000 ];//发送的验证码
+	ssender.sendWithParam("86", phoneNumbers[0], templateId,
+	paramss, smsSign, "", "", callback); 
+	
+})
+
+//注册验证手机号是否存在
+router.post('/api/registered', function(req, res, next) {
+	
+	//前端给后端的数据
+	let params = {
+		userName : req.body.phone
+	};
+	//查询手机号是否存在
+	connection.query( user.queryUserName( params ) , function (error, results, fields) {
+		if( results.length > 0 ){
+			res.send({
+				data:{
+					success:false,
+					msg:"手机号已经存在"
+				}
+			})
+		}else{
+			res.send({
+				data:{
+					success:true
+				}
+			})
+		}
+	})
+	
+})
 //用户登录
 router.post('/api/login', function(req, res, next) {
 	
